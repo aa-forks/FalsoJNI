@@ -377,6 +377,7 @@ JavaDynArray * jda_alloc(jsize len, FIELD_TYPE type) {
     javaDynArrays_free--;
 
     JavaDynArray * ret = &javaDynArrays[index];
+    free(array);
     jda_unlock();
     return ret;
 }
@@ -466,11 +467,13 @@ JavaDynArray * jda_find(void * arr) {
     return NULL;
 }
 
-va_list _AtoV(int dummy, ...) {
+// TODO fix memory leak static lmao, doesn't really matter because libvoip doesn't use this
+va_list* _AtoV(int dummy, ...) {
+    printf("memory leak in AtoV lol\n");
     va_list args1;
     va_start(args1, dummy);
-    va_list args2;
+    static va_list args2;
     va_copy(args2, args1);
     va_end(args1);
-    return args2;
+    return &args2;
 }

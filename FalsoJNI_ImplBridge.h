@@ -140,7 +140,7 @@ JavaDynArray * jda_find(void * arr);
  * Helper macros / functions
  */
 
-va_list _AtoV(int dummy, ...);
+va_list* _AtoV(int dummy, ...);
 
 #define getFieldValueById(jtype, fieldtype, containertype, container, containersize, id, defaultval) ({ \
   for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) { \
