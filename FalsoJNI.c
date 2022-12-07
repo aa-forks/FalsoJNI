@@ -101,7 +101,8 @@ jclass FindClass(JNIEnv* env, const char* name) {
     //   2) Providing a valid pointer to a valid object so that it behaves
     //      normally in memory and can be freed.
 
-    jclass clazz = (jclass) strdup(name);
+    // jclass clazz = (jclass) strdup(name);
+    jclass clazz = (jclass) name;
     fjni_logv_dbg("[JNI] FindClass(%s): 0x%x", name, (int)clazz);
     return clazz;
 }
@@ -1696,7 +1697,11 @@ const jchar* GetStringCritical(JNIEnv* env, jstring string, jboolean* isCopy) {
         *isCopy = JNI_TRUE;
     }
 
-    return (const jchar *)strdup((const char*)string);
+    if (isCopy) {
+        return (const jchar *)strdup((const char*)string);
+    }
+
+    return (const jchar *)string;
 }
 
 void ReleaseStringCritical(JNIEnv* env, jstring string, const jchar* carray) {
