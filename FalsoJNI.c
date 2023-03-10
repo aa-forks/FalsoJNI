@@ -1248,24 +1248,25 @@ jsize GetStringUTFLength(JNIEnv* env, jstring string) {
 }
 
 const char* GetStringUTFChars(JNIEnv* env, jstring string, jboolean* isCopy) {
-    fjni_logv_dbg("[JNI] GetStringUTFChars(env, \"%s\", *isCopy)", string);
+    fjni_logv_dbg("[JNI] GetStringUTFChars(env, \"%s\", *isCopy: %x)", string, isCopy);
 
-    char* newStr;
-    if (string == NULL) {
-        /* this shouldn't happen; throw NPE? */
-        newStr = NULL;
-    } else {
-        if (isCopy != NULL)
-            *isCopy = JNI_TRUE;
-        newStr = strdup(string);
-        if (newStr == NULL) {
-            /* assume memory failure */
-            fjni_log_err("native heap string alloc failed! aborting.");
-            abort();
-        }
-    }
+    // char* newStr;
+    // if (string == NULL) {
+    //     /* this shouldn't happen; throw NPE? */
+    //     newStr = NULL;
+    // } else {
+    //     if (isCopy != NULL)
+    //         *isCopy = JNI_TRUE;
+    //     newStr = strdup(string);
+    //     if (newStr == NULL) {
+    //         /* assume memory failure */
+    //         fjni_log_err("native heap string alloc failed! aborting.");
+    //         abort();
+    //     }
+    // }
 
-    return newStr;
+    // return newStr;
+    return string;
 }
 
 void ReleaseStringUTFChars(JNIEnv* env, jstring string, char* chars) {
@@ -1276,10 +1277,16 @@ void ReleaseStringUTFChars(JNIEnv* env, jstring string, char* chars) {
 }
 
 jsize GetArrayLength(JNIEnv* env, jarray array) {
+    // HACK to avoid null pointer crash with libvoip. see below
+    if ((int)array == 0x42424242 || (int)array == 0x69696969) {
+        fjni_log_dbg("[JNI] GetArrayLength(): ignored from libvoip hack!");
+        return 1;
+    }
     fjni_logv_dbg("[JNI] GetArrayLength(env, 0x%x)", (int)array);
 
     // TODO: this can theoretically be called for ObjectField values. Need to keep track of their sizes too?
     jsize ret = jda_sizeof(array);
+    fjni_logv_dbg("[JNI] GetArrayLength ret 0x%x", (int)ret);
     if (ret > -1) return ret;
 
     fjni_logv_warn("Array 0x%x not found. Unknown array type?", (int)array);
@@ -1302,6 +1309,12 @@ jobjectArray NewObjectArray(JNIEnv* env, jsize length, jclass elementClass, jobj
 }
 
 jobject GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) {
+    // HACK to avoid null pointer crash with libvoip
+    if ((int)array == 0x42424242 || (int)array == 0x69696969) {
+        fjni_log_dbg("[JNI] GetObjectArrayElement(): ignored from libvoip hack!");
+        return 0x100000;
+    }
+
     JavaDynArray * jda = jda_find((void *) array);
     if (!jda) {
         fjni_logv_err("[JNI] GetObjectArrayElement(env, 0x%x, idx:%i): Could not find the array", array, index);
@@ -1314,7 +1327,11 @@ jobject GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) {
     }
 
     jobject * arr = jda->array;
-    fjni_logv_dbg("[JNI] GetObjectArrayElement(env, 0x%x, idx:%i): 0x%x", array, index, (int)arr[index]);
+    fjni_logv_dbg("[JNI] JDA LEN %x, GetObjectArrayElement(env, 0x%x, idx:%i): 0x%x", jda->len, array, index, (int)arr[index]);
+    if (arr[index]== 0x0) {
+        fjni_log_err("UH OH NULL POINTER!");
+        return 0x100000;
+    }
     return arr[index];
 }
 
